@@ -535,8 +535,9 @@
                     note: '',
                     payment_type: '',
                     account_id: '',
-                    uploadFile:''
+                    image:'',
                 },
+                selectedFile: null,
                 vatPercent: 0,
                 discountPercent: 0,
                 cart: [],
@@ -618,7 +619,7 @@
         },
         methods: {
             uploadFile(event) {
-                this.sales.uploadFile = event.target.files[0]
+                this.selectedFile = event.target.files[0]
             },
 
             getEmployees() {
@@ -918,6 +919,7 @@
                 //     alert('Select a Payment Type');
                 //     return;
                 // }
+
                 if (this.sales.bankPaid > 0 && this.account.account_id == '') {
                     alert('Select a Bank Account');
                     return;
@@ -930,7 +932,7 @@
 
                 this.sales.account_id = this.account.account_id
 
-                this.saleOnProgress = true;
+                // this.saleOnProgress = true;
 
                 await this.getCustomerDue();
 
@@ -957,16 +959,20 @@
                 this.sales.customerId = this.selectedCustomer.Customer_SlNo;
                 this.sales.salesFrom = this.selectedBranch.brunch_id;
 
-                let data = {
-                    sales: this.sales,
-                    cart: this.cart
-                }
+                // let data = {
+                //     sales: this.sales,
+                //     cart: this.cart,
+                // }
+
+                let data = new FormData()
+                data.append('image', this.selectedFile)
+                data.append('sales', JSON.stringify(this.sales))
+                data.append('cart', JSON.stringify(this.cart))
 
                 if (this.selectedCustomer.Customer_Type == 'G') {
-                    data.customer = this.selectedCustomer;
+                    data.append('customer', JSON.stringify(this.selectedCustomer))
                 }
-                // console.log(data);
-                // return
+
 
                 axios.post(url, data).then(async res => {
                     let r = res.data;
@@ -991,30 +997,31 @@
                 await axios.post('/get_sales', {
                     salesId: this.sales.salesId
                 }).then(res => {
-                    let r = res.data;
-                    let sales = r.sales[0];
-                    this.sales.salesBy = sales.AddBy;
-                    this.sales.salesFrom = sales.SaleMaster_branchid;
-                    this.sales.salesDate = sales.SaleMaster_SaleDate;
-                    this.sales.salesType = sales.SaleMaster_SaleType;
-                    this.sales.customerId = sales.SalseCustomer_IDNo;
-                    this.sales.employeeId = sales.Employee_SlNo;
-                    this.sales.subTotal = sales.SaleMaster_SubTotalAmount;
-                    this.sales.discount = sales.SaleMaster_TotalDiscountAmount;
-                    this.sales.vat = sales.SaleMaster_TaxAmount;
-                    this.sales.transportCost = sales.SaleMaster_Freight;
-                    this.sales.total = sales.SaleMaster_TotalSaleAmount;
+                    let r                        = res.data;
+                    let sales                    = r.sales[0];
+                        this.sales.salesBy       = sales.AddBy;
+                        this.sales.salesFrom     = sales.SaleMaster_branchid;
+                        this.sales.salesDate     = sales.SaleMaster_SaleDate;
+                        this.sales.salesType     = sales.SaleMaster_SaleType;
+                        this.sales.customerId    = sales.SalseCustomer_IDNo;
+                        this.sales.employeeId    = sales.Employee_SlNo;
+                        this.sales.subTotal      = sales.SaleMaster_SubTotalAmount;
+                        this.sales.discount      = sales.SaleMaster_TotalDiscountAmount;
+                        this.sales.vat           = sales.SaleMaster_TaxAmount;
+                        this.sales.transportCost = sales.SaleMaster_Freight;
+                        this.sales.total         = sales.SaleMaster_TotalSaleAmount;
                     // this.sales.paid = sales.SaleMaster_PaidAmount;
-                    this.sales.cashPaid = sales.SaleMaster_cashPaid;
-                    this.sales.bankPaid = sales.SaleMaster_bankPaid;
-                    this.sales.previousDue = sales.SaleMaster_Previous_Due;
-                    this.sales.due = sales.SaleMaster_DueAmount;
-                    this.sales.note = sales.SaleMaster_Description;
-                    this.sales.payment_type = sales.payment_type;
-                    this.sales.account_id = sales.account_id;
+                        this.sales.cashPaid     = sales.SaleMaster_cashPaid;
+                        this.sales.bankPaid     = sales.SaleMaster_bankPaid;
+                        this.sales.previousDue  = sales.SaleMaster_Previous_Due;
+                        this.sales.due          = sales.SaleMaster_DueAmount;
+                        this.sales.note         = sales.SaleMaster_Description;
+                        this.sales.payment_type = sales.payment_type;
+                        this.sales.account_id   = sales.account_id;
+                        this.sales.image        = sales.image;
 
-                    this.oldCustomerId = sales.SalseCustomer_IDNo;
-                    this.oldPreviousDue = sales.SaleMaster_Previous_Due;
+                    this.oldCustomerId       = sales.SalseCustomer_IDNo;
+                    this.oldPreviousDue      = sales.SaleMaster_Previous_Due;
                     this.sales_due_on_update = sales.SaleMaster_DueAmount;
 
                     this.vatPercent = parseFloat(this.sales.vat) * 100 / parseFloat(this.sales

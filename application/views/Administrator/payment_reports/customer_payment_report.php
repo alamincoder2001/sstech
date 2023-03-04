@@ -80,7 +80,7 @@
 					</tr>
 					<tr v-for="payment in payments">
 						<td>{{ payment.date }}</td>
-						<td style="text-align:left;">{{ payment.description }}</td>
+						<td style="text-align:left;">{{ payment.description }} <span v-if="payment.image != null" class="customerPayment">- <a :href="`${location.origin+'/uploads/customerPayment/'}`+payment.image" target="_blank"><i class="fa fa-file" style="color:red;"></i></a></span></td>
 						<td style="text-align:right;">{{ parseFloat(payment.bill).toFixed(2) }}</td>
 						<td style="text-align:right;">{{ parseFloat(payment.paid).toFixed(2) }}</td>
 						<td style="text-align:right;">{{ parseFloat(payment.due).toFixed(2) }}</td>
@@ -150,6 +150,11 @@
 			},
 			async print(){
 				let reportContent = `
+					<style media="print">
+						.customerPayment{
+							display:none;
+						}
+					</style>
 					<div class="container">
 						<h4 style="text-align:center">Customer payment report</h4 style="text-align:center">
 						<div class="row">

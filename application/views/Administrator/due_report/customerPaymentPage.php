@@ -152,6 +152,13 @@
 							</div>
 						</div>
 						<div class="form-group">
+							<label class="col-md-4 control-label no-padding-right"> File Upload </label>
+							<label class="col-md-1">:</label>
+							<div class="col-md-7">
+								<input type="file" class="form-control" style="padding: 0;" @change="uploadFile">
+							</div>
+						</div>
+						<div class="form-group">
 							<div class="col-md-7 col-md-offset-5 text-right">
 								<input type="button" class="btn btn-danger btn-sm" value="Cancel" @click="resetForm">
 								<input type="submit" class="btn btn-success btn-sm" value="Save">
@@ -228,7 +235,8 @@
 					CPayment_amount_bank: 0,
 					account_id: null,
 					CPayment_notes: '',
-					CPayment_previous_due: 0
+					CPayment_previous_due: 0,
+					image: '',
 				},
 				payments: [],
 				customers: [],
@@ -242,6 +250,7 @@
 					account_id: '',
 					display_text: 'Select'
 				},
+				selectedFile: '',
 				userType: '<?php echo $this->session->userdata("accountType"); ?>',
 
 				columns: [{
@@ -315,6 +324,10 @@
 			this.getCustomerPayments();
 		},
 		methods: {
+			uploadFile(event) {
+				this.selectedFile = event.target.files[0]
+			},
+
 			getCustomerPayments() {
 				let data = {
 					dateFrom: this.payment.CPayment_date,
@@ -372,11 +385,15 @@
 
 				this.payment.CPayment_customerID = this.selectedCustomer.Customer_SlNo;
 
+				let formdata = new FormData();
+				formdata.append('image', this.selectedFile)
+				formdata.append('payment', JSON.stringify(this.payment));
+
 				let url = '/add_customer_payment';
 				if (this.payment.CPayment_id != 0) {
 					url = '/update_customer_payment';
 				}
-				axios.post(url, this.payment).then(res => {
+				axios.post(url, formdata).then(res => {
 					let r = res.data;
 					alert(r.message);
 					if (r.success) {

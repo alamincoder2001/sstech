@@ -236,6 +236,7 @@
                             <th>Paid</th>
                             <th>Due</th>
                             <th>Note</th>
+                            <th>File</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -256,6 +257,7 @@
                             </td>
                             <td style="text-align:right;">{{ sale.SaleMaster_DueAmount }}</td>
                             <td style="text-align:left;">{{ sale.SaleMaster_Description }}</td>
+                            <td style="text-align:center;"><a v-if="sale.image != null" :href="`${location.origin+'/uploads/salesImage/'}`+sale.image" target="_blank"><i class="fa fa-file" style="color:red;"></i></a></td>
                             <td style="text-align:center;">
                                 <a href="" title="Sale Invoice"
                                     v-bind:href="`/sale_invoice_print/${sale.SaleMaster_SlNo}`" target="_blank"><i
@@ -295,6 +297,7 @@
                             <td style="text-align:right;">
                                 {{ sales.reduce((prev, curr)=>{return prev + parseFloat(curr.SaleMaster_DueAmount)}, 0) }}
                             </td>
+                            <td></td>
                             <td></td>
                             <td></td>
                         </tr>

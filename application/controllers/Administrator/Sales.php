@@ -77,24 +77,27 @@ class Sales extends CI_Controller
     {
         $res = ['success' => false, 'message' => ''];
         try {
-            $data = json_decode($this->input->raw_input_stream);
-
-            $invoice = $data->sales->invoiceNo;
+            // $data = json_decode($this->input->raw_input_stream);
+            $sales     = json_decode($this->input->post('sales'));
+            $cart     = json_decode($this->input->post('cart'));
+            $customers = json_decode($this->input->post('customer'));
+            
+            $invoice = $sales->invoiceNo;
             $invoiceCount = $this->db->query("select * from tbl_salesmaster where SaleMaster_InvoiceNo = ?", $invoice)->num_rows();
             if ($invoiceCount != 0) {
                 $invoice = $this->mt->generateSalesInvoice();
             }
 
-            $customerId = $data->sales->customerId;
-            if (isset($data->customer)) {
-                $customer = (array)$data->customer;
+            $customerId = $sales->customerId;
+            if (isset($customers) && $customers != null) {
+                $customer = (array)$customers;
                 unset($customer['Customer_SlNo']);
                 unset($customer['display_name']);
 
-                $mobile_count = $this->db->query("select * from tbl_customer where Customer_Mobile = ? and Customer_brunchid = ?", [$data->customer->Customer_Mobile, $this->session->userdata("BRANCHid")]);
+                $mobile_count = $this->db->query("select * from tbl_customer where Customer_Mobile = ? and Customer_brunchid = ?", [$customers->Customer_Mobile, $this->session->userdata("BRANCHid")]);
                 if (
-                    $data->customer->Customer_Mobile != '' &&
-                    $data->customer->Customer_Mobile != null &&
+                    $customers->Customer_Mobile != '' &&
+                    $customers->Customer_Mobile != null &&
                     $mobile_count->num_rows() > 0
                 ) {
 
@@ -123,35 +126,35 @@ class Sales extends CI_Controller
                 }
             }
 
-            $sales = array(
+            $sale = array(
                 'SaleMaster_InvoiceNo'           => $invoice,
                 'SalseCustomer_IDNo'             => $customerId,
-                'employee_id'                    => $data->sales->employeeId,
-                'SaleMaster_SaleDate'            => $data->sales->salesDate,
-                'SaleMaster_SaleType'            => $data->sales->salesType,
-                'SaleMaster_TotalSaleAmount'     => $data->sales->total,
-                'SaleMaster_TotalDiscountAmount' => $data->sales->discount,
-                'SaleMaster_TaxAmount'           => $data->sales->vat,
-                'SaleMaster_Freight'             => $data->sales->transportCost,
-                'SaleMaster_SubTotalAmount'      => $data->sales->subTotal,
-                'SaleMaster_cashPaid'            => $data->sales->cashPaid,
-                'SaleMaster_bankPaid'            => $data->sales->bankPaid,
-                'SaleMaster_PaidAmount'          => $data->sales->cashPaid + $data->sales->bankPaid,
-                'SaleMaster_DueAmount'           => $data->sales->due,
-                'account_id'                     => $data->sales->account_id,
-                'SaleMaster_Previous_Due'        => $data->sales->previousDue,
-                'SaleMaster_Description'         => $data->sales->note,
+                'employee_id'                    => $sales->employeeId,
+                'SaleMaster_SaleDate'            => $sales->salesDate,
+                'SaleMaster_SaleType'            => $sales->salesType,
+                'SaleMaster_TotalSaleAmount'     => $sales->total,
+                'SaleMaster_TotalDiscountAmount' => $sales->discount,
+                'SaleMaster_TaxAmount'           => $sales->vat,
+                'SaleMaster_Freight'             => $sales->transportCost,
+                'SaleMaster_SubTotalAmount'      => $sales->subTotal,
+                'SaleMaster_cashPaid'            => $sales->cashPaid,
+                'SaleMaster_bankPaid'            => $sales->bankPaid,
+                'SaleMaster_PaidAmount'          => $sales->cashPaid + $sales->bankPaid,
+                'SaleMaster_DueAmount'           => $sales->due,
+                'account_id'                     => $sales->account_id,
+                'SaleMaster_Previous_Due'        => $sales->previousDue,
+                'SaleMaster_Description'         => $sales->note,
                 'Status'                         => 'a',
-                'is_service'                     => $data->sales->isService,
+                'is_service'                     => $sales->isService,
                 "AddBy"                          => $this->session->userdata("FullName"),
                 'AddTime'                        => date("Y-m-d H:i:s"),
                 'SaleMaster_branchid'            => $this->session->userdata("BRANCHid")
             );
 
-            $this->db->insert('tbl_salesmaster', $sales);
+            $this->db->insert('tbl_salesmaster', $sale);
             $salesId = $this->db->insert_id();
 
-            foreach ($data->cart as $cartProduct) {
+            foreach ($cart as $cartProduct) {
 
                 if ($cartProduct->productId == 'P01') {
                     $product                          = [];
@@ -207,6 +210,16 @@ class Sales extends CI_Controller
                     and branch_id = ?
                 ", [$cartProduct->quantity, $productId, $this->session->userdata('BRANCHid')]);
                 }
+            }
+
+            if (!empty($_FILES['image']['name'])) {
+                $currentDirectory = getcwd();
+                $dir = "/uploads/salesImage/";
+                $filename = time() . "-" . $_FILES['image']["name"];
+                $uploadPath = $currentDirectory . $dir . basename($filename);
+                move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
+                $this->db->where('SaleMaster_SlNo', $salesId);
+                $this->db->update('tbl_salesmaster', array("image" => $filename));
             }
             // $currentDue = $data->sales->previousDue + ($data->sales->total - $data->sales->cashPaid - $data->sales->bankPaid);
             // //Send sms
@@ -230,12 +243,16 @@ class Sales extends CI_Controller
     {
         $res = ['success' => false, 'message' => ''];
         try {
-            $data = json_decode($this->input->raw_input_stream);
-            $salesId = $data->sales->salesId;
-            $customerId = $data->sales->customerId;
+            // $data = json_decode($this->input->raw_input_stream);
+            $sales     = json_decode($this->input->post('sales'));
+            $cart     = json_decode($this->input->post('cart'));
+            $customers = json_decode($this->input->post('customer'));
 
-            if (isset($data->customer)) {
-                $customer = (array)$data->customer;
+            $salesId = $sales->salesId;
+            $customerId = $sales->customerId;
+
+            if (isset($customers) && $customers != null) {
+                $customer = (array)$customers;
                 unset($customer['Customer_SlNo']);
                 unset($customer['display_name']);
                 unset($customer['Customer_Code']);
@@ -245,14 +262,14 @@ class Sales extends CI_Controller
                 $customer['UpdateTime'] = date("Y-m-d H:i:s");
                 $customer['status'] = 'a';
 
-                if ($data->customer->Customer_Mobile != '' && $data->customer->Customer_Mobile != null) {
-                    $mobile_count = $this->db->query("select * from tbl_customer where Customer_Mobile = ? and Customer_SlNo != ? and Customer_brunchid = ?", [$data->customer->Customer_Mobile, $data->customer->Customer_SlNo, $this->session->userdata("BRANCHid")]);
+                if ($customers->Customer_Mobile != '' && $customers->Customer_Mobile != null) {
+                    $mobile_count = $this->db->query("select * from tbl_customer where Customer_Mobile = ? and Customer_SlNo != ? and Customer_brunchid = ?", [$customers->Customer_Mobile, $customers->Customer_SlNo, $this->session->userdata("BRANCHid")]);
                     if ($mobile_count->num_rows() > 0) {
                         $duplicateCustomer = $mobile_count->row();
                         if ($duplicateCustomer->Customer_Type == 'G') {
                             $customer['Customer_Type'] = 'retail';
                         } else {
-                            $data->sales->previousDue = $this->mt->customerDue(" and c.Customer_SlNo = '$duplicateCustomer->Customer_SlNo'")[0]->dueAmount;
+                            $sales->previousDue = $this->mt->customerDue(" and c.Customer_SlNo = '$duplicateCustomer->Customer_SlNo'")[0]->dueAmount;
                         }
                         $customerId = $duplicateCustomer->Customer_SlNo;
                     }
@@ -261,31 +278,30 @@ class Sales extends CI_Controller
                 $this->db->where('Customer_SlNo', $customerId)->update('tbl_customer', $customer);
             }
 
-            $sales = array(
-
+            $sale = array(
                 'SalseCustomer_IDNo'             => $customerId,
-                'employee_id'                    => $data->sales->employeeId,
-                'SaleMaster_SaleDate'            => $data->sales->salesDate,
-                'SaleMaster_SaleType'            => $data->sales->salesType,
-                'SaleMaster_TotalSaleAmount'     => $data->sales->total,
-                'SaleMaster_TotalDiscountAmount' => $data->sales->discount,
-                'SaleMaster_TaxAmount'           => $data->sales->vat,
-                'SaleMaster_Freight'             => $data->sales->transportCost,
-                'SaleMaster_SubTotalAmount'      => $data->sales->subTotal,
-                'SaleMaster_cashPaid'            => $data->sales->cashPaid,
-                'SaleMaster_bankPaid'            => $data->sales->bankPaid,
-                'SaleMaster_DueAmount'           => $data->sales->due,
-                'SaleMaster_Previous_Due'        => $data->sales->previousDue,
-                'SaleMaster_Description'         => $data->sales->note,
-                'payment_type'                   => $data->sales->payment_type,
-                'account_id'                     => $data->sales->account_id,
+                'employee_id'                    => $sales->employeeId,
+                'SaleMaster_SaleDate'            => $sales->salesDate,
+                'SaleMaster_SaleType'            => $sales->salesType,
+                'SaleMaster_TotalSaleAmount'     => $sales->total,
+                'SaleMaster_TotalDiscountAmount' => $sales->discount,
+                'SaleMaster_TaxAmount'           => $sales->vat,
+                'SaleMaster_Freight'             => $sales->transportCost,
+                'SaleMaster_SubTotalAmount'      => $sales->subTotal,
+                'SaleMaster_cashPaid'            => $sales->cashPaid,
+                'SaleMaster_bankPaid'            => $sales->bankPaid,
+                'SaleMaster_DueAmount'           => $sales->due,
+                'SaleMaster_Previous_Due'        => $sales->previousDue,
+                'SaleMaster_Description'         => $sales->note,
+                'payment_type'                   => $sales->payment_type,
+                'account_id'                     => $sales->account_id,
                 "UpdateBy"                       => $this->session->userdata("FullName"),
                 'UpdateTime'                     => date("Y-m-d H:i:s"),
                 "SaleMaster_branchid"            => $this->session->userdata("BRANCHid")
             );
 
             $this->db->where('SaleMaster_SlNo', $salesId);
-            $this->db->update('tbl_salesmaster', $sales);
+            $this->db->update('tbl_salesmaster', $sale);
 
 
             $currentSaleDetails = $this->db->query("select * from tbl_saledetails where SaleMaster_IDNo = ?", $salesId)->result();
@@ -300,7 +316,7 @@ class Sales extends CI_Controller
                 ", [$product->SaleDetails_TotalQuantity, $product->Product_IDNo, $this->session->userdata('BRANCHid')]);
             }
 
-            foreach ($data->cart as $cartProduct) {
+            foreach ($cart as $cartProduct) {
                 if ($cartProduct->productId == 'P01') {
                     $product                          = [];
                     $product['Product_Code']          = $this->mt->generateProductCode();
@@ -355,6 +371,20 @@ class Sales extends CI_Controller
                     and branch_id = ?
                 ", [$cartProduct->quantity, $productId, $this->session->userdata('BRANCHid')]);
                 }
+            }
+
+            if (!empty($_FILES['image']['name'])) {
+                $imagePath = './uploads/salesImage/' . $sales->image;
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+                $currentDirectory = getcwd();
+                $dir = "/uploads/salesImage/";
+                $filename = time() . "-" . $_FILES['image']["name"];
+                $uploadPath = $currentDirectory . $dir . basename($filename);
+                move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
+                $this->db->where('SaleMaster_SlNo', $salesId);
+                $this->db->update('tbl_salesmaster', array("image" => $filename));
             }
 
             $res = ['success' => true, 'message' => 'Sales Updated', 'salesId' => $salesId];

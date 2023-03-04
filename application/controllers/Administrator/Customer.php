@@ -134,13 +134,13 @@ class Customer extends CI_Controller
     {
         $res = ['success' => false, 'message' => ''];
         try {
-            $paymentObj = json_decode($this->input->raw_input_stream);
+            $paymentObj = json_decode($this->input->post('payment'));
 
-            $payment = (array)$paymentObj;
-            $payment['CPayment_invoice'] = $this->mt->generateCustomerPaymentCode();
-            $payment['CPayment_status'] = 'a';
-            $payment['CPayment_Addby'] = $this->session->userdata("FullName");
-            $payment['CPayment_AddDAte'] = date('Y-m-d H:i:s');
+            $payment                      = (array)$paymentObj;
+            $payment['CPayment_invoice']  = $this->mt->generateCustomerPaymentCode();
+            $payment['CPayment_status']   = 'a';
+            $payment['CPayment_Addby']    = $this->session->userdata("FullName");
+            $payment['CPayment_AddDAte']  = date('Y-m-d H:i:s');
             $payment['CPayment_brunchid'] = $this->session->userdata("BRANCHid");
 
             $this->db->insert('tbl_customer_payment', $payment);
@@ -158,6 +158,16 @@ class Customer extends CI_Controller
             //     $this->sms->sendSms($recipient, $message);
             // }
 
+            if (!empty($_FILES['image']['name'])) {
+                $currentDirectory = getcwd();
+                $dir = "/uploads/customerPayment/";
+                $filename = time() . "-" . $_FILES['image']["name"];
+                $uploadPath = $currentDirectory . $dir . basename($filename);
+                move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
+                $this->db->where('CPayment_id', $paymentId);
+                $this->db->update('tbl_customer_payment', array("image" => $filename));
+            }
+
             $res = ['success' => true, 'message' => 'Payment added successfully', 'paymentId' => $paymentId];
         } catch (Exception $ex) {
             $res = ['success' => false, 'message' => $ex->getMessage()];
@@ -170,7 +180,7 @@ class Customer extends CI_Controller
     {
         $res = ['success' => false, 'message' => ''];
         try {
-            $paymentObj = json_decode($this->input->raw_input_stream);
+            $paymentObj = json_decode($this->input->post('payment'));
             $paymentId = $paymentObj->CPayment_id;
 
             $payment = (array)$paymentObj;
@@ -179,6 +189,20 @@ class Customer extends CI_Controller
             $payment['CPayment_UpdateDAte'] = date('Y-m-d H:i:s');
 
             $this->db->where('CPayment_id', $paymentObj->CPayment_id)->update('tbl_customer_payment', $payment);
+
+            if (!empty($_FILES['image']['name'])) {
+                $imagePath = './uploads/customerPayment/' . $paymentObj->image;
+                if (file_exists($imagePath)) {
+                    unlink($imagePath);
+                }
+                $currentDirectory = getcwd();
+                $dir = "/uploads/customerPayment/";
+                $filename = time() . "-" . $_FILES['image']["name"];
+                $uploadPath = $currentDirectory . $dir . basename($filename);
+                move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
+                $this->db->where('CPayment_id', $paymentId);
+                $this->db->update('tbl_customer_payment', array("image" => $filename));
+            }
 
             $res = ['success' => true, 'message' => 'Payment updated successfully', 'paymentId' => $paymentId];
         } catch (Exception $ex) {
@@ -551,7 +575,6 @@ class Customer extends CI_Controller
             redirect(base_url());
         }
         $data['title'] = "Customer Payment Reports";
-        $branch_id = $this->session->userdata('BRANCHid');
 
         $data['content'] = $this->load->view('Administrator/payment_reports/customer_payment_report', $data, TRUE);
         $this->load->view('Administrator/index', $data);
@@ -573,7 +596,8 @@ class Customer extends CI_Controller
                 sm.SaleMaster_DueAmount as due,
                 0.00 as returned,
                 0.00 as paid_out,
-                0.00 as balance
+                0.00 as balance,
+                null as image
             from tbl_salesmaster sm
             where sm.SalseCustomer_IDNo = '$data->customerId'
             and sm.Status = 'a'
@@ -589,7 +613,8 @@ class Customer extends CI_Controller
                 0.00 as due,
                 0.00 as returned,
                 0.00 as paid_out,
-                0.00 as balance
+                0.00 as balance,
+                cp.image as image
             from tbl_customer_payment cp
             left join tbl_bank_accounts ba on ba.account_id = cp.account_id
             where cp.CPayment_TransactionType = 'CR'
@@ -607,7 +632,8 @@ class Customer extends CI_Controller
                 0.00 as due,
                 0.00 as returned,
                 sum(cp.CPayment_amount_cash + cp.CPayment_amount_bank) as paid_out,
-                0.00 as balance
+                0.00 as balance,
+                cp.image as image
             from tbl_customer_payment cp
             left join tbl_bank_accounts ba on ba.account_id = cp.account_id
             where cp.CPayment_TransactionType = 'CP'
@@ -625,7 +651,8 @@ class Customer extends CI_Controller
                 0.00 as due,
                 sr.SaleReturn_ReturnAmount as returned,
                 0.00 as paid_out,
-                0.00 as balance
+                0.00 as balance,
+                null as image
             from tbl_salereturn sr
             join tbl_salesmaster smr on smr.SaleMaster_InvoiceNo  = sr.SaleMaster_InvoiceNo
             where smr.SalseCustomer_IDNo = '$data->customerId'
