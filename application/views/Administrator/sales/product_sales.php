@@ -932,7 +932,7 @@
 
                 this.sales.account_id = this.account.account_id
 
-                // this.saleOnProgress = true;
+                this.saleOnProgress = true;
 
                 await this.getCustomerDue();
 
