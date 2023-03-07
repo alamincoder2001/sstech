@@ -257,7 +257,7 @@
                             </td>
                             <td style="text-align:right;">{{ sale.SaleMaster_DueAmount }}</td>
                             <td style="text-align:left;">{{ sale.SaleMaster_Description }}</td>
-                            <td style="text-align:center;"><a v-if="sale.image != null" :href="`${location.origin+'/uploads/salesImage/'}`+sale.image" target="_blank"><i class="fa fa-file" style="color:red;"></i></a></td>
+                            <td style="text-align:center;"><a v-if="sale.image != null" :href="`${location.origin}`+sale.image" target="_blank"><i class="fa fa-file" style="color:red;"></i></a></td>
                             <td style="text-align:center;">
                                 <a href="" title="Sale Invoice"
                                     v-bind:href="`/sale_invoice_print/${sale.SaleMaster_SlNo}`" target="_blank"><i

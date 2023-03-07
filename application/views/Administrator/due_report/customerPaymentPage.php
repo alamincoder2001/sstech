@@ -186,7 +186,7 @@
 							<td>{{ row.CPayment_date }}</td>
 							<td>{{ row.Customer_Name }}</td>
 							<td>{{ row.transaction_type }}</td>
-							<td>{{ row.payment_by }}</td>
+							<!-- <td>{{ row.payment_by }}</td> -->
 							<td>{{ row.CPayment_amount_cash }}</td>
 							<td>{{ row.CPayment_amount_bank }}</td>
 							<td>{{ row.CPayment_notes }}</td>
@@ -273,11 +273,11 @@
 						field: 'transaction_type',
 						align: 'center'
 					},
-					{
-						label: 'Payment by',
-						field: 'payment_by',
-						align: 'center'
-					},
+					// {
+					// 	label: 'Payment by',
+					// 	field: 'payment_by',
+					// 	align: 'center'
+					// },
 					{
 						label: 'Cash Amount',
 						field: 'CPayment_amount_cash',
@@ -329,11 +329,11 @@
 			},
 
 			getCustomerPayments() {
-				let data = {
-					dateFrom: this.payment.CPayment_date,
-					dateTo: this.payment.CPayment_date
-				}
-				axios.post('/get_customer_payments', data).then(res => {
+				// let data = {
+				// 	dateFrom: this.payment.CPayment_date,
+				// 	dateTo: this.payment.CPayment_date
+				// }
+				axios.post('/get_customer_payments', {Id: ""}).then(res => {
 					this.payments = res.data;
 				})
 			},

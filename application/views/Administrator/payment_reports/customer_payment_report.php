@@ -80,7 +80,7 @@
 					</tr>
 					<tr v-for="payment in payments">
 						<td>{{ payment.date }}</td>
-						<td style="text-align:left;">{{ payment.description }} <span v-if="payment.image != null" class="customerPayment">- <a :href="`${location.origin+'/uploads/customerPayment/'}`+payment.image" target="_blank"><i class="fa fa-file" style="color:red;"></i></a></span></td>
+						<td style="text-align:left;">{{ payment.description }} <span v-if="payment.image != null" class="customerPayment">- <a :href="`${location.origin}`+payment.image" target="_blank"><i class="fa fa-file" style="color:red;"></i></a></span></td>
 						<td style="text-align:right;">{{ parseFloat(payment.bill).toFixed(2) }}</td>
 						<td style="text-align:right;">{{ parseFloat(payment.paid).toFixed(2) }}</td>
 						<td style="text-align:right;">{{ parseFloat(payment.due).toFixed(2) }}</td>
@@ -112,17 +112,17 @@
 			return {
 				customers: [],
 				selectedCustomer: null,
-				dateFrom: null,
-				dateTo: null,
+				dateFrom: moment().format('YYYY-MM-DD'),
+				dateTo: moment().format('YYYY-MM-DD'),
 				payments: [],
 				previousBalance: 0.00,
 				showTable: false
 			}
 		},
 		created(){
-			let today = moment().format('YYYY-MM-DD');
-			this.dateTo = today;
-			this.dateFrom = moment().format('YYYY-MM-DD');
+			// let today = moment().format('YYYY-MM-DD');
+			// this.dateTo = today;
+			// this.dateFrom = moment().format('YYYY-MM-DD');
 			this.getCustomers();
 		},
 		methods:{

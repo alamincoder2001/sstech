@@ -165,7 +165,7 @@ class Customer extends CI_Controller
                 $uploadPath = $currentDirectory . $dir . basename($filename);
                 move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
                 $this->db->where('CPayment_id', $paymentId);
-                $this->db->update('tbl_customer_payment', array("image" => $filename));
+                $this->db->update('tbl_customer_payment', array("image" => $dir.$filename));
             }
 
             $res = ['success' => true, 'message' => 'Payment added successfully', 'paymentId' => $paymentId];
@@ -201,7 +201,7 @@ class Customer extends CI_Controller
                 $uploadPath = $currentDirectory . $dir . basename($filename);
                 move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
                 $this->db->where('CPayment_id', $paymentId);
-                $this->db->update('tbl_customer_payment', array("image" => $filename));
+                $this->db->update('tbl_customer_payment', array("image" => $dir.$filename));
             }
 
             $res = ['success' => true, 'message' => 'Payment updated successfully', 'paymentId' => $paymentId];
@@ -597,7 +597,7 @@ class Customer extends CI_Controller
                 0.00 as returned,
                 0.00 as paid_out,
                 0.00 as balance,
-                null as image
+                sm.image as image
             from tbl_salesmaster sm
             where sm.SalseCustomer_IDNo = '$data->customerId'
             and sm.Status = 'a'
@@ -607,7 +607,9 @@ class Customer extends CI_Controller
                 'b' as sequence,
                 cp.CPayment_id as id,
                 cp.CPayment_date as date,
-                concat('Received from Customer', ' ', cp.CPayment_notes) as description,
+                (CASE WHEN (cp.account_id != '') THEN concat('Bank Received ( ', ba.account_number, '-', ba.bank_name,' )')
+                    ELSE 'Cash Recieved'
+                END) as description,
                 0.00 as bill,
                 sum(cp.CPayment_amount_cash + cp.CPayment_amount_bank) as paid,
                 0.00 as due,
@@ -620,13 +622,16 @@ class Customer extends CI_Controller
             where cp.CPayment_TransactionType = 'CR'
             and cp.CPayment_customerID = '$data->customerId'
             and cp.CPayment_status = 'a'
+            group by id
 
             UNION
             select
                 'c' as sequence,
                 cp.CPayment_id as id,
                 cp.CPayment_date as date,
-                concat('Paid - to Customer', ' ', cp.CPayment_notes) as description,
+                (CASE WHEN (cp.account_id != '') THEN concat('Bank Payment ( ', ba.account_number, '-', ba.bank_name,' )')
+                    ELSE 'Cash Payment'
+                END) as description,
                 0.00 as bill,
                 0.00 as paid,
                 0.00 as due,
@@ -639,6 +644,7 @@ class Customer extends CI_Controller
             where cp.CPayment_TransactionType = 'CP'
             and cp.CPayment_customerID = '$data->customerId'
             and cp.CPayment_status = 'a'
+            group by id
             
             UNION
             select
@@ -667,7 +673,7 @@ class Customer extends CI_Controller
             $payment->balance = ($lastBalance + $payment->bill + $payment->paid_out) - ($payment->paid + $payment->returned);
         }
 
-        if ((isset($data->dateFrom) && $data->dateFrom != null) && (isset($data->dateTo) && $data->dateTo != null)) {
+        if ((isset($data->dateFrom) && $data->dateFrom != "") && (isset($data->dateTo) && $data->dateTo != "")) {
             $previousPayments = array_filter($payments, function ($payment) use ($data) {
                 return $payment->date < $data->dateFrom;
             });

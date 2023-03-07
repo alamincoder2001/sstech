@@ -219,7 +219,7 @@ class Sales extends CI_Controller
                 $uploadPath = $currentDirectory . $dir . basename($filename);
                 move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
                 $this->db->where('SaleMaster_SlNo', $salesId);
-                $this->db->update('tbl_salesmaster', array("image" => $filename));
+                $this->db->update('tbl_salesmaster', array("image" => $dir.$filename));
             }
             // $currentDue = $data->sales->previousDue + ($data->sales->total - $data->sales->cashPaid - $data->sales->bankPaid);
             // //Send sms
@@ -384,7 +384,7 @@ class Sales extends CI_Controller
                 $uploadPath = $currentDirectory . $dir . basename($filename);
                 move_uploaded_file($_FILES["image"]['tmp_name'], $uploadPath);
                 $this->db->where('SaleMaster_SlNo', $salesId);
-                $this->db->update('tbl_salesmaster', array("image" => $filename));
+                $this->db->update('tbl_salesmaster', array("image" => $dir.$filename));
             }
 
             $res = ['success' => true, 'message' => 'Sales Updated', 'salesId' => $salesId];
